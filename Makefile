@@ -14,6 +14,7 @@ BINDIR?=${DESTDIR}${PREFIX}/bin
 INCDIR?=${DESTDIR}${PREFIX}/include/lev
 LIBDIR?=${DESTDIR}${PREFIX}/lib/lev
 
+BUILDTYPE?=Debug
 
 all:
 	tools/build.py build
@@ -31,7 +32,7 @@ test-all: test-lua test-install test-uninstall
 
 DESTDIR=test_install
 
-test-lua: out/Debug/lev
+test-lua: out/${BUILDTYPE}/lev
 	tools/build.py test
 
 test-install: install
@@ -46,7 +47,7 @@ test-uninstall: uninstall
 
 install: all
 	mkdir -p ${BINDIR}
-	install out/Debug/lev ${BINDIR}/lev
+	install out/${BUILDTYPE}/lev ${BINDIR}/lev
 	mkdir -p ${LIBDIR}
 	cp lib/lev/*.lua ${LIBDIR}
 	mkdir -p ${INCDIR}/luajit
