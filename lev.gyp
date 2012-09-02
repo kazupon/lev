@@ -151,7 +151,7 @@
           'cflags': [ '--std=c89' ],
           'defines': [ '_GNU_SOURCE' ]
         }],
-        ['OS=="mac" or target_arch=="x64"', {
+        ['OS=="mac" and target_arch=="x64"', {
           'libraries': [
             '-pagezero_size 10000',
             '-image_base 100000000',
