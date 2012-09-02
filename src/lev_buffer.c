@@ -42,7 +42,7 @@ typedef unsigned __int32 uintptr_t;
 #define __bswap16   _byteswap_ushort
 #define __bswap32   _byteswap_ulong
 /* GCC Built-in */
-#elif (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
+#elif (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
 /* http://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html */
 
   /* NOOP */

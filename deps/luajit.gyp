@@ -64,7 +64,13 @@
         'luajit-datafiles',
       ],
       'conditions': [
-        ['OS == "linux"', { 'libraries': ['-ldl'] }, ],
+        ['OS=="linux"', { 'libraries': ['-ldl'] }, ],
+        ['OS=="mac" or target_arch=="x64"', {
+          'libraries': [
+            '-pagezero_size 10000',
+            '-image_base 100000000',
+          ]
+        }]
       ],
       'sources': [
         'luajit/src/luajit.c',
