@@ -18,8 +18,12 @@ LIBDIR?=${DESTDIR}${PREFIX}/lib/lev
 all:
 	tools/build.py build
 
+out/Makefile: common.gypi deps/luajit.gyp deps/uv/uv.gyp deps/zlib/zlib.gyp deps/openssl.gyp deps/luacrypto.gyp deps/yajl.gyp deps/http-parser/http_parser.gyp lev.gyp
+	tools/gyp_lev -f make
+
 clean:
-	-rm -rf out
+	-rm -rf out/Makefile
+	-rm -rf out/**/lev
 
 test: test-lua
 
