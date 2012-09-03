@@ -177,11 +177,7 @@ if code == 0:
     print ""
     print "Done!"
     print ""
-    if sys.platform == "win32":
-        print "Now run `python build.py` to build!"
-    else:
-        print "Now run `make -C out` to build!"
-    print ""
+    print "Now run `make` to build!"
 else:
     print ""
     print "Error occured. Please investigate details above."
