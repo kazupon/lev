@@ -342,12 +342,12 @@ static int handle_script(lua_State *L, char **argv, int n)
     fname = NULL;  /* stdin */
   }
 
-//  lua_getfield(L, LUA_GLOBALSINDEX, "_coroutine");
-//  lua_getfield(L, -1, "wrap");
-//  lua_remove(L, -2); /* remove _coroutine -- wrap remains */
+  lua_getfield(L, LUA_GLOBALSINDEX, "_coroutine");
+  lua_getfield(L, -1, "wrap");
+  lua_remove(L, -2); /* remove _coroutine -- wrap remains */
   status = luaL_loadfile(L, fname); 
   if (status == 0) { /* file as func now on stack */
-//    lua_call(L, 1, 1); /* create wrapper eating both wrap and function, wrapper now on stack */
+    lua_call(L, 1, 1); /* create wrapper eating both wrap and function, wrapper now on stack */
     lua_insert(L, -(narg+1)); /* move wrapper to before args */
     status = docall(L, narg, 0); /* call wrapper with args */
   } else {

@@ -39,6 +39,7 @@
 typedef struct {
   LEVBASE_REF_FIELDS
   uv_timer_t handle;
+  int use_lcb;
 } timer_obj;
 
 static int timer_new(lua_State* L) {
@@ -50,6 +51,7 @@ static int timer_new(lua_State* L) {
   assert(NULL != loop->data);
 
   self = (timer_obj*)create_obj_init_ref(L, sizeof *self, "lev.timer");
+  self->use_lcb = 0;
   r = uv_timer_init(loop, &self->handle);
   assert(r == 0);
 
@@ -58,10 +60,16 @@ static int timer_new(lua_State* L) {
 
 static void timer_on_close(uv_handle_t *handle) {
   UNWRAP(handle);
-  if (push_callback(L, self, "on_close")) {
-    lua_call(L, 1, 0);/*, -3*/
-    
+
+  if (LUA_NOREF == self->threadref || self->use_lcb) {
+    if (push_callback(L, self, "on_close")) {
+      lua_call(L, 1, 0);/*, -3*/
+    }
+  } else {
+    luv_lua_debug_stackdump(L, "on_close");
+    lua_resume(L, 0);
   }
+
   lev_handle_unref(L, (LevRefStruct_t*)self);
 }
 
@@ -72,8 +80,15 @@ static int timer_close(lua_State* L) {
 
   self = luaL_checkudata(L, 1, "lev.timer");
 
-  if (lua_isfunction(L, 2))
-    set_callback(L, "on_close", 2);
+  luv_lua_debug_stackdump(L, "timer_close");
+  if (LUA_NOREF != self->threadref) {
+    self->use_lcb = 0;
+  } else {
+    if (lua_isfunction(L, 2)) {
+      set_callback(L, "on_close", 2);
+    }
+    self->use_lcb = 1;
+  }
 
   handle = &self->handle;
   r = uv_timer_stop(handle);
@@ -81,14 +96,26 @@ static int timer_close(lua_State* L) {
 
   uv_close((uv_handle_t *)handle, timer_on_close);
 
-  return 0;
+  if (LUA_NOREF != self->threadref) {
+    luv_lua_debug_stackdump(L, "ddd");
+    return lua_yield(L, 0);
+  } else {
+    return 0;
+  }
 }
 
 static void on_timer(uv_timer_t *handle, int status) {
   UNWRAP(handle);
-  push_callback(L, self, "on_timer");
-  lua_pushinteger(L, status);
-  lua_call(L, 2, 0);/*, -4*/
+
+  if (LUA_NOREF == self->threadref || self->use_lcb) {
+    push_callback(L, self, "on_timer");
+    lua_pushinteger(L, status);
+    lua_call(L, 2, 0);/*, -4*/
+  } else {
+    lua_pushinteger(L, status);
+    luv_lua_debug_stackdump(L, "on_timer");
+    lua_resume(L, 1);
+  }
 }
 
 static int timer_start(lua_State* L) {
@@ -98,16 +125,30 @@ static int timer_start(lua_State* L) {
   int r;
 
   self = luaL_checkudata(L, 1, "lev.timer");
-  set_callback(L, "on_timer", 2);
-  timeout = luaL_optlong(L, 3, 0);
-  repeat = luaL_optlong(L, 4, 0);
+  assert(self != NULL);
+
+  luv_lua_debug_stackdump(L, "timer_start");
+  if (LUA_NOREF != self->threadref) {
+    timeout = luaL_optlong(L, 2, 0);
+    repeat = luaL_optlong(L, 3, 0);
+    self->use_lcb = 0;
+  } else {
+    set_callback(L, "on_timer", 2);
+    timeout = luaL_optlong(L, 3, 0);
+    repeat = luaL_optlong(L, 4, 0);
+    self->use_lcb = 1;
+  }
 
   r = uv_timer_start(&self->handle, on_timer, timeout, repeat);
   assert(r == 0);
 
   lev_handle_ref(L, (LevRefStruct_t*)self, 1);
 
-  return 0;
+  if (LUA_NOREF != self->threadref) {
+    return lua_yield(L, 0);
+  } else {
+    return 0;
+  }
 }
 
 static int timer_stop(lua_State* L) {
